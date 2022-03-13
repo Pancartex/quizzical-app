@@ -1,0 +1,20 @@
+.quiz-container {
+  background-color: #fff;
+  width: 1000px;
+  height: auto;
+  overflow: auto;
+}
+
+.answers-list {
+  display: flex;
+  gap: 20px;
+  list-style: none;
+}
+
+.answers-list li {
+  padding: 5px 10px;
+  border: 1px solid var(--darkblue);
+  color: var(--darkblue);
+  border-radius: 8px;
+  cursor: pointer;
+}
