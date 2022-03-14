@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import "./style/form.css";
+import "./style/quiz.css";
 import "./style/index.css";
 import { nanoid } from "nanoid";
 import { decode } from "html-entities";
 import arrayShuffle from "array-shuffle";
 import Form from "../src/components/Form";
+import Question from "../src/components/Question";
 
 function App() {
   const [isStarted, setIsStarted] = useState(false);
@@ -11,15 +14,53 @@ function App() {
   const [formData, setFormData] = useState({
     category: "",
     difficulty: "",
-    amount: 1,
+    amount: 5,
   });
-  const [quizData, setQuizData] = useState([]);
+  const [questionData, setQuestionData] = useState([]);
+  const [allSelected, setAllSelected] = useState(false);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [endgame, setEndGame] = useState(false);
+  const [shake, setShake] = useState(false);
+  console.log(questionData);
+  console.log(allSelected);
+  console.log(endgame);
 
   useEffect(() => {
     fetch("https://opentdb.com/api_category.php")
       .then((res) => res.json())
       .then((data) => setCategories(data.trivia_categories));
   }, []);
+
+  useEffect(() => {
+    fetch(
+      `https://opentdb.com/api.php?amount=${formData.amount}&category=${formData.category}&difficulty=${formData.difficulty}&type=multiple`
+    )
+      .then((res) => res.json())
+      .then((quizData) =>
+        setQuestionData(
+          quizData.results.map((question) => {
+            let shuffledAnswers = arrayShuffle([
+              question.correct_answer,
+              ...question.incorrect_answers,
+            ]);
+            return {
+              questionId: nanoid(),
+              question: decode(question.question),
+              shuffled_answers: shuffledAnswers.map((answer) => ({
+                id: nanoid(),
+                answerName: decode(answer),
+                isCorrect: answer === question.correct_answer ? true : false,
+                isSelected: false,
+              })),
+            };
+          })
+        )
+      );
+  }, [formData]);
+
+  useEffect(() => {
+    checkAllSelected();
+  }, [questionData]);
 
   //  HANDLE CHANGES IN STARTER FORM
   //  HANDLE CHANGES IN STARTER FORM
@@ -36,20 +77,95 @@ function App() {
 
   function handleSubmitRules(e) {
     e.preventDefault();
-    if (formData.amount < 1 || formData.amount > 25) {
-      return alert("You must select between 1 to 25 questions");
+    if (formData.amount < 5 || formData.amount > 25) {
+      return alert("You must select between 5 to 25 questions");
     }
     setIsStarted(true);
   }
 
-  useEffect(() => {
-    fetch(
-      `https://opentdb.com/api.php?amount=${formData.amount}&category=${formData.category}&difficulty=${formData.difficulty}&type=multiple`
-    )
-      .then((res) => res.json())
-      .then((quizData) => setQuizData(quizData.results));
-    console.log(quizData);
-  }, [formData]);
+  function toggleSelectedAnswer(id, questionId) {
+    setQuestionData((prevQuestions) => {
+      prevQuestions
+        .find((question) => question.questionId === questionId)
+        .shuffled_answers.map((answer) =>
+          answer.id === id
+            ? (answer.isSelected = true)
+            : (answer.isSelected = false)
+        );
+      return [...prevQuestions];
+    });
+  }
+
+  function checkAllSelected() {
+    let selected = 0;
+    for (let i = 0; i < questionData.length; i++) {
+      for (let j = 0; j < questionData[0].shuffled_answers.length; j++) {
+        if (questionData[i].shuffled_answers[j].isSelected) {
+          selected++;
+        }
+      }
+    }
+
+    if (selected === questionData.length) {
+      setAllSelected(true);
+    } else {
+      setAllSelected(false);
+    }
+  }
+
+  function countCorrectAnswers() {
+    let correct = 0;
+    for (let i = 0; i < questionData.length; i++) {
+      for (let j = 0; j < questionData[0].shuffled_answers.length; j++) {
+        if (
+          questionData[i].shuffled_answers[j].isSelected &&
+          questionData[i].shuffled_answers[j].isCorrect
+        ) {
+          correct++;
+        }
+      }
+    }
+    setCorrectAnswers(correct);
+  }
+
+  function submitAnswers() {
+    if (allSelected && !endgame) {
+      countCorrectAnswers();
+      setEndGame(true);
+    } else {
+      animate();
+    }
+  }
+
+  function playAgain() {
+    setIsStarted(false);
+    setQuestionData([]);
+    setAllSelected(false);
+    setEndGame(false);
+    setFormData({ category: "", difficulty: "", amount: 5 });
+    setCorrectAnswers(0);
+  }
+
+  const questionEl = questionData.map((question) => {
+    return (
+      <Question
+        key={question.questionId}
+        question={question.question}
+        shuffled_answers={question.shuffled_answers}
+        questionId={question.questionId}
+        toggleSelectedAnswer={toggleSelectedAnswer}
+        endgame={endgame}
+      />
+    );
+  });
+
+  const animate = () => {
+    // Button begins to shake
+    setShake(true);
+
+    // Buttons stops to shake after 2 seconds
+    setTimeout(() => setShake(false), 500);
+  };
 
   return (
     <div className="App">
@@ -64,7 +180,35 @@ function App() {
           />
         </div>
       )}
-      {isStarted && <div className="quiz-container"></div>}
+      {isStarted && (
+        <div className="quiz-container">
+          {questionEl}
+          <div className="quiz-footer">
+            {!endgame && (
+              <button
+                onClick={submitAnswers}
+                className={`quiz-button ${shake ? `shake` : null}`}
+              >
+                Check Answers
+              </button>
+            )}
+            {endgame && (
+              <div className="endgame-button-wrap">
+                <p className="score">
+                  You have {correctAnswers}/{questionData.length} correct
+                  answers
+                </p>
+                <button
+                  onClick={playAgain}
+                  className="quiz-button play-again-btn"
+                >
+                  Play again?
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
