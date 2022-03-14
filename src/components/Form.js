@@ -9,7 +9,7 @@ export default function Form({
   return (
     <form onSubmit={handleSubmitRules} className="intro-form">
       <div className="intro-selections">
-        <label htmlFor="category">Category: </label>
+        <label htmlFor="category">Category</label>
         <select
           name="category"
           id="category"
@@ -27,7 +27,7 @@ export default function Form({
         </select>
       </div>
       <div className="intro-selections">
-        <label htmlFor="difficulty">Difficulty: </label>
+        <label htmlFor="difficulty">Difficulty</label>
         <select
           name="difficulty"
           id="difficulty"
@@ -49,14 +49,14 @@ export default function Form({
         </select>
       </div>
       <div className="intro-selections">
-        <label htmlFor="amount">Numbers of Questions: </label>
+        <label htmlFor="amount">Numbers of Questions</label>
         <input
           className="amount-input"
           type="number"
           name="amount"
           value={formData.amount}
           onChange={handleChange}
-          min="1"
+          min="5"
           max="25"
         ></input>
       </div>
