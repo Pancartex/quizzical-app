@@ -21,9 +21,6 @@ function App() {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [endgame, setEndGame] = useState(false);
   const [shake, setShake] = useState(false);
-  console.log(questionData);
-  console.log(allSelected);
-  console.log(endgame);
 
   useEffect(() => {
     fetch("https://opentdb.com/api_category.php")
@@ -65,6 +62,7 @@ function App() {
   //  HANDLE CHANGES IN STARTER FORM
   //  HANDLE CHANGES IN STARTER FORM
 
+  // handle changes in form
   function handleChange(event) {
     const { name, value } = event.target;
     setFormData((prevFromData) => {
@@ -75,6 +73,7 @@ function App() {
     });
   }
 
+  // submit form function
   function handleSubmitRules(e) {
     e.preventDefault();
     if (formData.amount < 5 || formData.amount > 25) {
@@ -83,6 +82,7 @@ function App() {
     setIsStarted(true);
   }
 
+  // passing this function to the question component to select the answer for each questions
   function toggleSelectedAnswer(id, questionId) {
     setQuestionData((prevQuestions) => {
       prevQuestions
@@ -96,6 +96,7 @@ function App() {
     });
   }
 
+  // loop through questions & their answers to check if they are all selected
   function checkAllSelected() {
     let selected = 0;
     for (let i = 0; i < questionData.length; i++) {
@@ -113,6 +114,10 @@ function App() {
     }
   }
 
+  // maybe merge both checkAllSelected & countCorrectAnswers
+  // maybe merge both checkAllSelected & countCorrectAnswers
+
+  // loop through questions & their answers to count the correct answers
   function countCorrectAnswers() {
     let correct = 0;
     for (let i = 0; i < questionData.length; i++) {
@@ -128,6 +133,7 @@ function App() {
     setCorrectAnswers(correct);
   }
 
+  // function to submit your answers
   function submitAnswers() {
     if (allSelected && !endgame) {
       countCorrectAnswers();
@@ -137,6 +143,7 @@ function App() {
     }
   }
 
+  // play again button after submitting answers
   function playAgain() {
     setIsStarted(false);
     setQuestionData([]);
@@ -146,6 +153,7 @@ function App() {
     setCorrectAnswers(0);
   }
 
+  // creating the question component
   const questionEl = questionData.map((question) => {
     return (
       <Question
