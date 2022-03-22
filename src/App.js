@@ -17,7 +17,6 @@ function App() {
     amount: 5,
   });
   const [questionData, setQuestionData] = useState([]);
-  const [allSelected, setAllSelected] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [endgame, setEndGame] = useState(false);
   const [shake, setShake] = useState(false);
@@ -46,7 +45,7 @@ function App() {
               shuffled_answers: shuffledAnswers.map((answer) => ({
                 id: nanoid(),
                 answerName: decode(answer),
-                isCorrect: answer === question.correct_answer ? true : false,
+                isCorrect: answer === question.correct_answer,
                 isSelected: false,
               })),
             };
@@ -55,9 +54,11 @@ function App() {
       );
   }, [formData]);
 
-  useEffect(() => {
-    checkAllSelected();
-  }, [questionData]);
+  const isAllSelected = questionData.every((question) =>
+    question.shuffled_answers
+      ? question.shuffled_answers.some((answer) => answer.isSelected)
+      : false
+  );
 
   //  HANDLE CHANGES IN STARTER FORM
   //  HANDLE CHANGES IN STARTER FORM
@@ -85,34 +86,30 @@ function App() {
   // passing this function to the question component to select the answer for each questions
   function toggleSelectedAnswer(id, questionId) {
     setQuestionData((prevQuestions) => {
-      prevQuestions
-        .find((question) => question.questionId === questionId)
-        .shuffled_answers.map((answer) =>
-          answer.id === id
-            ? (answer.isSelected = true)
-            : (answer.isSelected = false)
-        );
-      return [...prevQuestions];
+      return prevQuestions.map((question) =>
+        question.questionId === questionId
+          ? {
+              ...question,
+              shuffled_answers: question.shuffled_answers.map((answer) => ({
+                ...answer,
+                isSelected: answer.id === id,
+              })),
+            }
+          : question
+      );
+      // const newQuestions = [...prevQuestions];
+
+      // prevQuestions
+      //   .find((question) => question.questionId === questionId)
+      //   .shuffled_answers.map((answer) => ({
+      //     ...answer,
+      //     isSelected: answer.id === id,
+      //   }));
+      // return [...prevQuestions];
     });
   }
 
   // loop through questions & their answers to check if they are all selected
-  function checkAllSelected() {
-    let selected = 0;
-    for (let i = 0; i < questionData.length; i++) {
-      for (let j = 0; j < questionData[0].shuffled_answers.length; j++) {
-        if (questionData[i].shuffled_answers[j].isSelected) {
-          selected++;
-        }
-      }
-    }
-
-    if (selected === questionData.length) {
-      setAllSelected(true);
-    } else {
-      setAllSelected(false);
-    }
-  }
 
   // maybe merge both checkAllSelected & countCorrectAnswers
   // maybe merge both checkAllSelected & countCorrectAnswers
@@ -130,12 +127,13 @@ function App() {
         }
       }
     }
-    setCorrectAnswers(correct);
+    return correct;
   }
 
+  const correctAnswersX = countCorrectAnswers();
   // function to submit your answers
   function submitAnswers() {
-    if (allSelected && !endgame) {
+    if (isAllSelected && !endgame) {
       countCorrectAnswers();
       setEndGame(true);
     } else {
@@ -147,7 +145,6 @@ function App() {
   function playAgain() {
     setIsStarted(false);
     setQuestionData([]);
-    setAllSelected(false);
     setEndGame(false);
     setFormData({ category: "", difficulty: "", amount: 5 });
     setCorrectAnswers(0);
@@ -203,7 +200,7 @@ function App() {
             {endgame && (
               <div className="endgame-button-wrap">
                 <p className="score">
-                  You have {correctAnswers}/{questionData.length} correct
+                  You have {correctAnswersX}/{questionData.length} correct
                   answers
                 </p>
                 <button
